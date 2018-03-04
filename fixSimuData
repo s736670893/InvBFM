@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# dos2unix /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/fixSimuData.sh
-
-# bash /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/fixSimuData.sh /home/gao/hdg/gao/wuzhongjia/simulateData3k/ 60kto3milion_INV3011_0.005/  60kto3milion.hs37d5.fa 0.005 Seq.test.fa 60kto3milion_INV3011_0.005 "--Inv 61-start:45000-end:48010 --size 3011" 360 30 25X 128
-
-## path = $1$2 ; fa = $1$3	;	fileNameFront = $1$2$6	;	bamFile = $1$2$6.bam
-
-
 if [ $# != 11 ]
 then
 	echo "Usage: "
@@ -20,48 +13,33 @@ mkdir $1$2
 echo "dos2unix /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/fixSimuData.sh" > $1$2readme
 echo "bash /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/fixSimuData.sh $1 $2 $3 $4 $5 $6 \"$7\" $8 $9 ${10} ${11}" >> $1$2readme
 echo "simulateSeq.pl --outdir $1$2 $1$3 --div $4 --Seq $1$2$5 --name $6 $7 --ISPE $8 --ISSD $9 --PE ${10} --RL ${11}-${11} --type stdfq > $1$2$6.vcf"
-# simulateSeq.pl --outdir 60kto3milion_INV611_DEL611 60kto3milion.hs37d5.fa --div 0.005 --Seq Seq.test.DEL.fa --name INV_DEL_0_DIV --Inv 61-start:45000-end:45610 --size 611 --Del 61-start:44200-end:44810 --size 611 --ISPE 470 --ISSD 30 --PE 75X --RL 128-128 --type stdfq > 60kto3milion_INV611_DEL611/SV.INV611.DEL611.log
 simulateSeq.pl --outdir $1$2 $1$3 --div $4 --Seq $1$2$5 --name $6 $7 --ISPE $8 --ISSD $9 --PE ${10} --RL ${11}-${11} --type stdfq > $1$2$6.vcf
 echo
-# bwa aln -t 8 ../60kto3milion.hs37d5.fa INV_DEL_0_DIV_PE1.fq > INV_DEL_0_DIV_PE1.fq.sai
 bwa aln -t 8 $1$3 $1$2$6_PE1.fq > $1$2$6_PE1.fq.sai
-# bwa aln -t 8 ../60kto3milion.hs37d5.fa INV_DEL_0_DIV_PE2.fq > INV_DEL_0_DIV_PE2.fq.sai
 bwa aln -t 8 $1$3 $1$2$6_PE2.fq > $1$2$6_PE2.fq.sai
-# bwa sampe ../60kto3milion.hs37d5.fa INV_DEL_0_DIV_PE1.fq.sai INV_DEL_0_DIV_PE2.fq.sai INV_DEL_0_DIV_PE1.fq INV_DEL_0_DIV_PE2.fq > INV_DEL_0_DIV.sam
 bwa sampe $1$3 $1$2$6_PE1.fq.sai $1$2$6_PE2.fq.sai $1$2$6_PE1.fq $1$2$6_PE2.fq > $1$2$6.sam
-# samtools view -@ 8 -bS INV_DEL_0_DIV.sam > INV_DEL_0_DIV.unsort.bam
 samtools view -@ 8 -bS $1$2$6.sam > $1$2$6.unsort.bam
-# samtools sort -@ 8 INV_DEL_0_DIV.unsort.bam > INV_DEL_0_DIV.bam
 samtools sort -@ 8 $1$2$6.unsort.bam > $1$2$6.bam
 rm $1$2$6.unsort.bam
-# samtools index INV_DEL_0_DIV.bam
 samtools index $1$2$6.bam
 echo "get simulated bam end"
 
 mkdir $1$2dellyResult
-# delly_v0.7.7 call -t INV -o dellyResult_INV.bcf -g ../../60kto3milion.hs37d5.fa ../INV_DEL_0_DIV.bam
 delly_v0.7.7 call -t INV -o $1$2dellyResult/$6_dellyResult_INV.bcf -g $1$3 $1$2$6.bam
 python /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/fixBCF.py $1$2dellyResult/ $6_dellyResult_INV.bcf $6_dellyResult_INV
 echo "get DellyResult end"
 
 mkdir $1$2pindelResult
-# touch config_INV611_DEL611
-# ../INV_DEL_0_DIV.bam 470 30
 echo "$1$2$6.bam $8 $6" > $1$2pindelResult/config_$6
-# pindel -f ../../60kto3milion.hs37d5.fa -i config_INV611_DEL611 -o pindelyResult
 pindel -f $1$3 -i $1$2pindelResult/config_$6 -o $1$2pindelResult/$6_pindelResult
 echo "get PindelResult end"
 
 mkdir $1$2lumpyResult
 cd $1$2
-# speedseq align -R "@RG\tID:id\tSM:sample\tLB:lib" ../../60kto3milion.hs37d5.fa ../INV_DEL_0_DIV_PE1.fq ../INV_DEL_0_DIV_PE2.fq
 speedseq align -R "@RG\tID:id\tSM:sample\tLB:lib" $1$3 $1$2$6_PE1.fq $1$2$6_PE2.fq # produce ： 60kto3milion_INV1011_0.005_PE1.fq.bam、60kto3milion_INV1011_0.005_PE1.fq.bam.bai、60kto3milion_INV1011_0.005_PE1.fq.discordants.bam、60kto3milion_INV1011_0.005_PE1.fq.discordants.bam.bai、60kto3milion_INV1011_0.005_PE1.fq.splitters.bam、60kto3milion_INV1011_0.005_PE1.fq.splitters.bam.bai、
-# samtools view  INV_DEL_0_DIV_PE1.fq.bam | tail -n+100000 | /mnt/hdg/gao/tools/LUMPY/lumpy-sv/scripts/pairend_distro.py -r 128 -X 4 -N 10000 -o INV_DEL_0_DIV_PE1.fq.bam.histo
 samtools view $1$2$6_PE1.fq.bam | tail -n+100000 | /mnt/hdg/gao/tools/LUMPY/lumpy-sv/scripts/pairend_distro.py -r ${11} -X 4 -N 10000 -o $1$2lumpyResult/$6_PE1.fq.bam.histo 
-# lumpy -mw 4 -tt 0 -pe id:INV611_DEL611,bam_file:INV_DEL_0_DIV_PE1.fq.discordants.bam,histo_file:INV_DEL_0_DIV_PE1.fq.bam.histo,mean:470,stdev:30,read_length:128,min_non_overlap:128,discordant_z:5,back_distance:10,weight:1,min_mapping_threshold:20 -sr id:INV611_DEL611,bam_file:INV_DEL_0_DIV_PE1.fq.splitters.bam,back_distance:10,weight:1,min_mapping_threshold:20 > lumpyResult
 lumpy -mw 4 -tt 0 -pe id:$6,bam_file:$1$2$6_PE1.fq.discordants.bam,histo_file:$1$2lumpyResult/$6_PE1.fq.bam.histo,mean:$8,stdev:$9,read_length:${11},min_non_overlap:${11},discordant_z:5,back_distance:10,weight:1,min_mapping_threshold:20 -sr id:$6,bam_file:$1$2$6_PE1.fq.splitters.bam,back_distance:10,weight:1,min_mapping_threshold:20 > $1$2lumpyResult/$6_lumpyResult
 echo "get LumpyResult end"
-# lumpyexpress -B INV_DEL_0_DIV_PE1.fq.bam -S INV_DEL_0_DIV_PE1.fq.splitters.bam -D INV_DEL_0_DIV_PE1.fq.discordants.bam -o lumpyexpressResult
 lumpyexpress -B $1$2$6_PE1.fq.bam -S $1$2$6_PE1.fq.splitters.bam -D $1$2$6_PE1.fq.discordants.bam -o $1$2lumpyResult/$6_lumpyexpressResult
 echo "get LumpyexpressResult end"
 
