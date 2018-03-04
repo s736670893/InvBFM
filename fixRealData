@@ -6,67 +6,50 @@ then
 	echo "Usage: "
 	echo "./fixRealData.sh <resultDirectory> <realBamDirectory> <realData.bam> <referenceDirectory> <referenceChrom.fa> <referenceWholeGene.fa>"
 fi
-# sampleName=${3:0:15}
-# path=$1${sampleName}/
-# bamPath=$2$3
-# faPath=$4$5
-# allfaPath=$4$6
-# dellyPath=${path}dellyResult/
-# pindelPath=${path}pindelResult/
-# lumpyPath=${path}lumpyResult/
-# mkdir ${path}
+sampleName=${3:0:15}
+path=$1${sampleName}/
+bamPath=$2$3
+faPath=$4$5
+allfaPath=$4$6
+dellyPath=${path}dellyResult/
+pindelPath=${path}pindelResult/
+lumpyPath=${path}lumpyResult/
+mkdir ${path}
 
-# mkdir ${dellyPath}
-# delly_v0.7.7 call -t INV -o ${dellyPath}${sampleName}_dellyResult_INV.bcf -g ${allfaPath} ${bamPath}
-# python /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/fixBCF.py ${dellyPath} ${sampleName}_dellyResult_INV.bcf ${sampleName}_dellyResult_INV
-# echo "get dellyResult end"
+mkdir ${dellyPath}
+delly_v0.7.7 call -t INV -o ${dellyPath}${sampleName}_dellyResult_INV.bcf -g ${allfaPath} ${bamPath}
+python /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/fixBCF.py ${dellyPath} ${sampleName}_dellyResult_INV.bcf ${sampleName}_dellyResult_INV
+echo "get dellyResult end"
 
-# mkdir ${pindelPath}
-# mean_insertsize=$(awk 'NR==2 {print $16}'  ${bamPath}.bas)
-# echo "${bamPath} ${mean_insertsize} ${sampleName}" > ${pindelPath}config_${sampleName}
-# pindel -f ${faPath} -i ${pindelPath}config_${sampleName} -o ${pindelPath}${sampleName}_pindelResult
-# echo "get pindelResult end"
+mkdir ${pindelPath}
+mean_insertsize=$(awk 'NR==2 {print $16}'  ${bamPath}.bas)
+echo "${bamPath} ${mean_insertsize} ${sampleName}" > ${pindelPath}config_${sampleName}
+pindel -f ${faPath} -i ${pindelPath}config_${sampleName} -o ${pindelPath}${sampleName}_pindelResult
+echo "get pindelResult end"
 
-# mkdir ${lumpyPath}
-# samtools view -H ${bamPath} > ${lumpyPath}${sampleName}.splitters.unsorted.sam
-# samtools view ${bamPath} | awk '{if(index($6,"S")) print $0}' >> ${lumpyPath}${sampleName}.splitters.unsorted.sam
-# samtools view -b -h ${lumpyPath}${sampleName}.splitters.unsorted.sam > ${lumpyPath}${sampleName}.splitters.unsorted.bam
-# samtools sort ${lumpyPath}${sampleName}.splitters.unsorted.bam -o ${lumpyPath}${sampleName}.splitters.bam
-# samtools index ${lumpyPath}${sampleName}.splitters.bam
-# rm ${lumpyPath}${sampleName}.splitters.unsorted.sam
-# rm ${lumpyPath}${sampleName}.splitters.unsorted.bam
-# samtools view -b -F 1294 ${bamPath} > ${lumpyPath}${sampleName}.discordants.unsorted.bam
-# samtools sort ${lumpyPath}${sampleName}.discordants.unsorted.bam -o ${lumpyPath}${sampleName}.discordants.bam
-# samtools index ${lumpyPath}${sampleName}.discordants.bam
-# rm ${lumpyPath}${sampleName}.discordants.unsorted.bam
-# lumpyexpress -B ${bamPath} -S ${lumpyPath}${sampleName}.splitters.bam -D ${lumpyPath}${sampleName}.discordants.bam -o ${lumpyPath}${sampleName}_lumpyexpressResult > ${lumpyPath}${sampleName}_lumpyexpress_temp
-# readLength=$(awk 'NR==6 {print $4}'  ${lumpyPath}${sampleName}_lumpyexpress_temp)
-# issd=$(awk 'NR==2 {print $17}'  ${bamPath}.bas)
-# mean_insertsize=$(awk 'NR==2 {print $16}'  ${bamPath}.bas)
-# echo "${mean_insertsize}" > ${path}mean_insertsize
-# samtools view ${bamPath} | tail -n+100000 | /mnt/hdg/gao/tools/LUMPY/lumpy-sv/scripts/pairend_distro.py -r ${readLength} -X 4 -N 10000 -o ${lumpyPath}${sampleName}.histo >> ${lumpyPath}${sampleName}_lumpyexpress_temp
-# lumpy -mw 4 -tt 0 -pe id:${sampleName},bam_file:${lumpyPath}${sampleName}.discordants.bam,histo_file:${lumpyPath}${sampleName}.histo,mean:${mean_insertsize},stdev:${issd},read_length:${readLength},min_non_overlap:${readLength},discordant_z:5,back_distance:10,weight:1,min_mapping_threshold:20 -sr id:${sampleName},bam_file:${lumpyPath}${sampleName}.splitters.bam,back_distance:10,weight:1,min_mapping_threshold:20 > ${lumpyPath}${sampleName}_lumpyResult
-# rm ${lumpyPath}${sampleName}.splitters.bam* ${lumpyPath}${sampleName}.discordants.bam*
-# echo "get lumpyResult and lumpyExpress end"
+mkdir ${lumpyPath}
+samtools view -H ${bamPath} > ${lumpyPath}${sampleName}.splitters.unsorted.sam
+samtools view ${bamPath} | awk '{if(index($6,"S")) print $0}' >> ${lumpyPath}${sampleName}.splitters.unsorted.sam
+samtools view -b -h ${lumpyPath}${sampleName}.splitters.unsorted.sam > ${lumpyPath}${sampleName}.splitters.unsorted.bam
+samtools sort ${lumpyPath}${sampleName}.splitters.unsorted.bam -o ${lumpyPath}${sampleName}.splitters.bam
+samtools index ${lumpyPath}${sampleName}.splitters.bam
+rm ${lumpyPath}${sampleName}.splitters.unsorted.sam
+rm ${lumpyPath}${sampleName}.splitters.unsorted.bam
+samtools view -b -F 1294 ${bamPath} > ${lumpyPath}${sampleName}.discordants.unsorted.bam
+samtools sort ${lumpyPath}${sampleName}.discordants.unsorted.bam -o ${lumpyPath}${sampleName}.discordants.bam
+samtools index ${lumpyPath}${sampleName}.discordants.bam
+rm ${lumpyPath}${sampleName}.discordants.unsorted.bam
+lumpyexpress -B ${bamPath} -S ${lumpyPath}${sampleName}.splitters.bam -D ${lumpyPath}${sampleName}.discordants.bam -o ${lumpyPath}${sampleName}_lumpyexpressResult > ${lumpyPath}${sampleName}_lumpyexpress_temp
+readLength=$(awk 'NR==6 {print $4}'  ${lumpyPath}${sampleName}_lumpyexpress_temp)
+issd=$(awk 'NR==2 {print $17}'  ${bamPath}.bas)
+mean_insertsize=$(awk 'NR==2 {print $16}'  ${bamPath}.bas)
+echo "${mean_insertsize}" > ${path}mean_insertsize
+samtools view ${bamPath} | tail -n+100000 | /mnt/hdg/gao/tools/LUMPY/lumpy-sv/scripts/pairend_distro.py -r ${readLength} -X 4 -N 10000 -o ${lumpyPath}${sampleName}.histo >> ${lumpyPath}${sampleName}_lumpyexpress_temp
+lumpy -mw 4 -tt 0 -pe id:${sampleName},bam_file:${lumpyPath}${sampleName}.discordants.bam,histo_file:${lumpyPath}${sampleName}.histo,mean:${mean_insertsize},stdev:${issd},read_length:${readLength},min_non_overlap:${readLength},discordant_z:5,back_distance:10,weight:1,min_mapping_threshold:20 -sr id:${sampleName},bam_file:${lumpyPath}${sampleName}.splitters.bam,back_distance:10,weight:1,min_mapping_threshold:20 > ${lumpyPath}${sampleName}_lumpyResult
+rm ${lumpyPath}${sampleName}.splitters.bam* ${lumpyPath}${sampleName}.discordants.bam*
+echo "get lumpyResult and lumpyExpress end"
 
-# echo "fixRealData end"
+echo "fixRealData end"
 
-
-
-#1 python /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/getPindelDellyLumpyVCFPoints.py ${path} pindelResult/${sampleName}_pindelResult_ pindelResult/${sampleName}_pindelPoints_ dellyResult/${sampleName}_dellyResult_ dellyResult/${sampleName}_dellyPoints_ lumpyResult/${sampleName}_lumpyexpressResult lumpyResult/${sampleName}_lumpyexpressPoints_ lumpyResult/${sampleName}_lumpyResult lumpyResult/${sampleName}_lumpyPoints_ realBam
-
-#0 less /home/gao/hdg/gao/wuzhongjia/vcf/INV.NA.chr11.addHead.ALL.wgs.mergedSV.v8.20130502.svs.genotypes.vcf.getChromPoint | grep ${sampleName:0:7} | awk '{split($4,b,";END=");split(b[2],c,";");;print $3,c[1]}' > ${path}${sampleName}_vcfPoints_INV
-#0 echo "get vcf Points Features end"
-
-#1 python /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/fixDetectedPointsV3.py ${pindelPath}${sampleName}_pindelPoints_INV ${dellyPath}${sampleName}_dellyPoints_INV ${lumpyPath}${sampleName}_lumpyPoints_INV ${lumpyPath}${sampleName}_lumpyexpressPoints_INV ${path}${sampleName}_fixDetectedPointsV3_INV ${mean_insertsize} ${issd} 
-#0 python /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/getNoInvPoints.py ${path}${sampleName}_vcfPoints_INV ${path}${sampleName}_fixDetectedPointsV3_INV_noInv
-
-#1 python /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/findFeaturesV1.py ${path}${sampleName}_fixDetectedPointsV3_INV ${path}${sampleName}_fixDetectedINVPointsV3Features_V1 ${bamPath} "11" ${mean_insertsize} ${issd}
-#0 python /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/findFeaturesV2.py ${path}${sampleName}_fixDetectedPointsV3_INV ${path}${sampleName}_fixDetectedINVPointsV3Features_V2 ${bamPath} "11" ${mean_insertsize} ${issd}
-#0 python /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/findFeaturesV3.py ${path}${sampleName}_fixDetectedPointsV3_INV ${path}${sampleName}_fixDetectedINVPointsV3Features_V3 ${bamPath} "11" ${mean_insertsize} ${issd}
-
-#0 python /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/findFeaturesV1.py ${path}${sampleName}_fixDetectedPointsV3_INV_noInv ${path}${sampleName}_fixDetectedINVPointsV3Features_noInv_V1 ${bamPath} "11" ${mean_insertsize} ${issd}
-#0 python /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/findFeaturesV2.py ${path}${sampleName}_fixDetectedPointsV3_INV_noInv ${path}${sampleName}_fixDetectedINVPointsV3Features_noInv_V2 ${bamPath} "11" ${mean_insertsize} ${issd}
-#0 python /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/findFeaturesV3.py ${path}${sampleName}_fixDetectedPointsV3_INV_noInv ${path}${sampleName}_fixDetectedINVPointsV3Features_noInv_V3 ${bamPath} "11" ${mean_insertsize} ${issd}
 
 echo "get candidate features end"
