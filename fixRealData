@@ -50,6 +50,3 @@ rm ${lumpyPath}${sampleName}.splitters.bam* ${lumpyPath}${sampleName}.discordant
 echo "get lumpyResult and lumpyExpress end"
 
 echo "fixRealData end"
-
-
-echo "get candidate features end"
