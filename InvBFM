@@ -1,0 +1,535 @@
+#!/usr/bin/python2.7
+#-*- coding: utf-8 -*-
+
+# dos2unix InvBFM
+
+from pysam import VariantFile
+import numpy as np
+import fileinput
+import time
+import sys
+
+def getLumpyBreakPoints(dicPath,lumpyFileName,lumpyPointsFile,svType):
+	print("-------------------------------")
+	print("Lumpy start，fixed original Lumpy file：",dicPath+lumpyFileName)
+	lumpyInvPoints = open(dicPath+lumpyPointsFile+svType, 'w')
+	try:
+		lumpyFile = fileinput.input(dicPath+lumpyFileName) 
+		for line in lumpyFile:
+			if(line[0] != '#'):
+				lines = line.split('\t')
+				svType1 = lines[4][1:-1]
+				startPos = lines[1]
+				endPos = lines[7].split('END=')[1].split(';CIPOS')[0]
+				if(svType1 == svType):
+					lumpyInvPoints.write(str(startPos+' '+endPos+'\n'))
+	except:
+		i = 0
+	lumpyInvPoints.close()
+	fileinput.close()
+	print("Lumpy start，fixed original Lumpy file：",dicPath+lumpyPointsFile+svType)
+
+def getPindelBreakPoints(dicPath,pindelFileName,pindelPointsFile,svType):
+	print("Pindel start，fixed original Pindel file：",dicPath+pindelFileName+svType)
+	count = 0
+	pindelPoints = open(dicPath+pindelPointsFile+svType, 'w')
+	pindelFile = fileinput.input(dicPath+pindelFileName+svType) 
+	for line in pindelFile:
+		if(line[0].isdigit()):
+			lines = line.split('\t')
+			startPos = lines[6].split(' ')[1]
+			endPos = lines[7]
+			count += 1
+			pindelPoints.write(str(startPos+' '+endPos+'\n'))
+	fileinput.close()
+	pindelPoints.close()
+	print('Pindel result fixed end. Generate Pindel points file：',dicPath+pindelPointsFile+svType)
+
+def getDellyBreakPoints(dicPath,dellyFileName,dellyPointsFile,svType):
+	print("Delly start，fixed original Delly file：",dicPath+dellyFileName+svType)
+	count = 0
+	dellyPoints = open(dicPath+dellyPointsFile+svType, 'w')
+	dellyFile = fileinput.input(dicPath+dellyFileName+svType) 
+	for line in dellyFile:
+		startPos = line.split('\t')[1]
+		recs = str(line).split("END=")
+		endPos = recs[1][:recs[1].find(";")]
+		count += 1
+		dellyPoints.write(str(startPos+' '+endPos+'\n'))
+	fileinput.close()
+	dellyPoints.close()
+	print('Delly result fixed end. Generate Delly points file：',dicPath+dellyPointsFile+svType)
+
+def getVcfFixBreakPoints(dicPath,VCFFileName,VCFPoints,svType):
+	print("fixed vcf：",dicPath+VCFFileName)
+	vcfPoints = open(dicPath+VCFPoints+svType, 'w')
+	VCFFile = open(dicPath+VCFFileName)
+	line1 ='init'
+	startPos = endPos = sub = lastSub = count = 0
+
+	while(line1):
+		line1 = VCFFile.readline()
+		if(line1 == ''):
+			break
+		line2 = VCFFile.readline()
+		if((line2[0] != 'N') and (svType in line1)):
+			lines = line1.split(':')[1].split('\t')
+			sub += lastSub
+			startPos = str(int(lines[0].strip())+sub)
+			endPos = str(int(lines[1])+sub)
+			vcfPoints.write(str(startPos+' '+endPos+'\n'))
+			count +=1
+		else:
+			if((line2[0] == 'N') and (svType in line1)):
+				sub += lastSub
+				lastSub = int(line1.split('\t')[2].split(':')[1])		
+
+	vcfPoints.close()
+	VCFFile.close()
+	print("vcf fixed end. Generate simulated inversion points file：",dicPath+VCFPoints+svType)
+
+
+
+def getVcfNoFixBreakPoints(dicPath,VCFFileName,VCFPoints,svType):
+	print("fixed vcf：",dicPath+VCFFileName)
+	count = 0
+	vcfPoints = open(dicPath+VCFPoints+svType, 'w')
+	VCFFile = open(dicPath+VCFFileName)
+	invMap = {"INV":"Inv"}
+	line1 ='init'
+	while(line1):
+		line1 = VCFFile.readline()
+		if(line1 == ''):
+			break
+		line2 = VCFFile.readline()
+		if((line2[0] != 'N') and (invMap.get(svType) in line1)):
+			lines = line1.split(':')[1].split('\t')
+			startPos = lines[0].strip()
+			endPos = lines[1]
+			count += 1
+			vcfPoints.write(str(startPos+' '+endPos+'\n'))
+
+	vcfPoints.close()
+	VCFFile.close()
+	print("vcf fixed end. Generate simulated no inversion points file：",dicPath+VCFPoints+svType)
+
+
+
+def fixAllPoints(file1,file2,file3,file4,outputFile,mean_insertsize,issd):
+
+	mean_insertsize = int(mean_insertsize)
+
+	points1_ori = np.loadtxt(file1,int).reshape(-1,2)
+	points2_ori = np.loadtxt(file2,int).reshape(-1,2)
+	points3_ori = np.loadtxt(file3,int).reshape(-1,2)
+	points4_ori = np.loadtxt(file4,int).reshape(-1,2)
+
+	points1 = filter(lambda x: x[1]-x[0] > mean_insertsize, points1_ori)
+	points1 = [i for i in points1]
+	points2 = filter(lambda x: x[1]-x[0] > mean_insertsize, points2_ori)
+	points2 = [i for i in points2]
+	points3 = filter(lambda x: x[1]-x[0] > mean_insertsize, points3_ori)
+	points3 = [i for i in points3]
+	points4 = filter(lambda x: x[1]-x[0] > mean_insertsize, points4_ori)
+	points4 = [i for i in points4]
+
+	if len(points1) == 0:
+		points1 = np.empty(shape=[0, 2])
+
+	try:
+		points1 =  np.vstack((points1, points2))	
+	except:
+		i =0
+	try:
+		points1 =  np.vstack((points1, points3))
+	except:
+		i =0
+	try:
+		points1 =  np.vstack((points1, points4))
+	except:
+		i =0
+	points1 = points1[np.lexsort(points1[:,::-1].T)]
+
+	points2 = []
+	points1Len = len(points1)
+	if(points1Len == 0):
+		np.savetxt(outputFile, [], newline='\n',fmt='%s')
+		return
+	for aPoint in points1:
+		points2.append([aPoint[0],aPoint[1]])
+	points2 = np.array(points2)
+	np.savetxt(outputFile, points2, newline='\n',fmt='%d %d')
+	print('Getting candidate inversions from real data end. Generate candidate inversions file:',outputFile)
+
+
+
+def getMinInvLenReadInform(bamFileName,chr_id,lPoint,rPoint,ISPE): 
+	samfile = pysam.AlignmentFile(bamFileName, "rb")
+	reads = []
+	lLoc = lPoint - ISPE
+	rLoc = rPoint + ISPE
+	for read in samfile.fetch(chr_id, lLoc, rLoc):
+		mapCount = insertCount = deletionCount = softClipCount = 0 
+		if (read.cigarstring != None):
+			for cigar_portion in read.cigartuples:
+				if cigar_portion[0] == 0:
+					mapCount = mapCount+cigar_portion[1]
+				elif cigar_portion[0] == 1:
+					insertCount = insertCount+cigar_portion[1]
+				elif cigar_portion[0] == 2:
+					deletionCount = deletionCount+cigar_portion[1]
+				elif cigar_portion[0] == 4:
+					softClipCount = softClipCount+cigar_portion[1]
+		try:
+			XT_value = read.get_tag('XT')
+			isSingle = 0
+		except:
+			XT_value = "N"
+		try: 
+			mate = samfile.mate(read)
+			mate_is_reverse = mate.is_reverse
+		except:
+			mate_is_reverse = None
+		reads.append([XT_value,mapCount,softClipCount,insertCount,deletionCount,read.query_length,abs(read.template_length),read.pos,read.mpos,read.mapping_quality,read.is_reverse,mate_is_reverse])
+
+	samfile.close()	
+	return	reads
+
+def getMaxInvLenReadInform(bamFileName,chr_id,lPoint,rPoint,ISPE): 
+	samfile = pysam.AlignmentFile(bamFileName, "rb")
+	reads = []
+	lLoc = lPoint - ISPE
+	rLoc = lPoint + ISPE
+	for read in samfile.fetch(chr_id, lLoc, rLoc):
+		mapCount = insertCount = deletionCount = softClipCount = 0
+		if (read.cigarstring != None):
+			for cigar_portion in read.cigartuples:
+				if cigar_portion[0] == 0:
+					mapCount = mapCount+cigar_portion[1]
+				elif cigar_portion[0] == 1:
+					insertCount = insertCount+cigar_portion[1]
+				elif cigar_portion[0] == 2:
+					deletionCount = deletionCount+cigar_portion[1]
+				elif cigar_portion[0] == 4:
+					softClipCount = softClipCount+cigar_portion[1]
+		try:
+			XT_value = read.get_tag('XT')
+			isSingle = 0
+		except:
+			XT_value = "N"
+		try: 
+			mate = samfile.mate(read)
+			mate_is_reverse = mate.is_reverse
+		except:
+			mate_is_reverse = None
+		reads.append([XT_value,mapCount,softClipCount,insertCount,deletionCount,read.query_length,abs(read.template_length),read.pos,read.mpos,read.mapping_quality,read.is_reverse,mate_is_reverse])
+			
+	lLoc = rPoint - ISPE
+	rLoc = rPoint + ISPE
+	for read in samfile.fetch(chr_id, lLoc, rLoc):
+		mapCount = insertCount = deletionCount = softClipCount = 0
+		if (read.cigarstring != None):
+			for cigar_portion in read.cigartuples:
+				if cigar_portion[0] == 0:
+					mapCount = mapCount+cigar_portion[1]
+				elif cigar_portion[0] == 1:
+					insertCount = insertCount+cigar_portion[1]
+				elif cigar_portion[0] == 2:
+					deletionCount = deletionCount+cigar_portion[1]
+				elif cigar_portion[0] == 4:
+					softClipCount = softClipCount+cigar_portion[1]
+		try:
+			XT_value = read.get_tag('XT')
+			isSingle = 0
+		except:
+			XT_value = "N"
+		try: 
+			mate = samfile.mate(read)
+			mate_is_reverse = mate.is_reverse
+		except:
+			mate_is_reverse = None
+		reads.append([XT_value,mapCount,softClipCount,insertCount,deletionCount,read.query_length,abs(read.template_length),read.pos,read.mpos,read.mapping_quality,read.is_reverse,mate_is_reverse])
+
+	samfile.close()	
+	return	reads
+
+
+def readInform2aFeature(readInforms,cordLimit1,cordLimit2):
+
+	umCount = 0
+	mmCount = 0
+	nmCount = 0
+	efCount = 0
+	eCount = 0
+	concordCount = 0
+	discordCount = 0
+	ffCount = 0
+	ttCount = 0
+	minQualCount = 0
+	midQualCount = 0
+	maxQualCount = 0
+	mapQualitySum = 0
+	singleCount = 0
+	sameStrandCount = 0
+	clipCount = 0
+
+	for readInform in readInforms:
+		mapQual = readInform[-3]
+		mapQualitySum += mapQual
+		if(mapQual > 29):
+			maxQualCount += 1
+		elif(maxQualCount < 20):
+			minQualCount += 1
+		elif(readInform[1] < readInform[5]):
+			midQualCount += 1
+		else:
+			maxQualCount += 1
+		if(readInform[0] == 'U'):
+			umCount += 1
+		elif(readInform[0] == 'M'):
+			mmCount += 1
+		else:
+			nmCount += 1
+
+		if(readInform[1] == readInform[5]):
+			efCount += 1
+		else:
+			eCount += 1
+
+		if((int(readInform[6]) > cordLimit1) & (int(readInform[6]) < cordLimit2)):
+			concordCount += 1
+		else:
+			discordCount += 1
+
+		if((bool(readInform[-1]) == True ) & (readInform[-1] == readInform[-2])):
+			ttCount += 1
+
+		if((bool(readInform[-1]) == False ) & (readInform[-1] == readInform[-2])):
+			ffCount += 1
+
+		if(readInform[2]>5):
+			clipCount += 1
+	
+	readInformsLen = len(readInforms) + 0.1
+	ttRate = ttCount / (readInformsLen/2 - ttCount)
+	ffRate = ffCount / (readInformsLen/2 - ffCount)
+	singleCount = nmCount
+	sameStrandCount = ttCount + ffCount
+	mapQualitySum /= 60.0
+	# return [umCount/readInformsLen,mmCount/readInformsLen,singleCount/readInformsLen,clipCount/readInformsLen,efCount/readInformsLen,eCount/readInformsLen,concordCount/readInformsLen,discordCount/readInformsLen,mapQualitySum/readInformsLen,minQualCount/readInformsLen,midQualCount/readInformsLen,maxQualCount/readInformsLen,ttRate,ffRate,sameStrandCount/readInformsLen] #original 15 features
+	return [mmCount/readInformsLen,singleCount/readInformsLen,clipCount/readInformsLen,eCount/readInformsLen,discordCount/readInformsLen,mapQualitySum/readInformsLen,midQualCount/readInformsLen,ttRate,ffRate,sameStrandCount/readInformsLen] #selected 10 features by InvBFM
+
+
+
+def getFeatures(oriPointsFileName,featuresFileName,bamFileName,chr_id,ISPE,ISSD):
+	print('Mining features start.')
+	print('Mined points file：',oriPointsFileName)
+	print('Mined bam file：',bamFileName)
+	print('Mined chromosome number is ',chr_id)
+	ISPE = int(ISPE)
+	ISSD = int(float(ISSD))
+	oriPoints = np.loadtxt(oriPointsFileName).reshape(-1,2)
+	features = []
+	if(len(oriPoints) == 0):
+		features = np.array(features)
+		np.savetxt(featuresFileName, [], newline='\n',fmt='%s')
+		print('Mining features end. Generate features file：',featuresFileName)
+		return
+	i = 0
+	allLen = len(oriPoints)
+	cordLimit1 = ISPE - ISSD*3
+	cordLimit2 = ISPE + ISSD*3
+
+	for aPoints in oriPoints:
+		lPoint = int(aPoints[0])
+		rPoint = int(aPoints[1])
+		invLen = rPoint - lPoint
+		if(invLen < ISPE):
+			readInforms = getMinInvLenReadInform(bamFileName,chr_id,lPoint,rPoint,ISPE)
+		else:
+			readInforms = getMaxInvLenReadInform(bamFileName,chr_id,lPoint,rPoint,ISPE)
+		features.append(readInform2aFeature(readInforms,cordLimit1,cordLimit2))
+		i += 1
+	features = np.array(features)
+	np.savetxt(featuresFileName, features, newline='\n',fmt='%s')
+	print('Mining features end. Generate features file：',featuresFileName)
+
+
+
+def getNoINVPoints(invPointsFileName,noInvPointsFileName):
+	vcfPoints = np.loadtxt(invPointsFileName,int).reshape(-1,2)
+	noINVPoints = []
+	for i in range(1,len(vcfPoints)):
+		noINVPoints.append([int((vcfPoints[i][0]+vcfPoints[i-1][0])/2),int((vcfPoints[i][1]+vcfPoints[i-1][1])/2)])
+	noINVPoints = np.array(noINVPoints)
+	np.savetxt(noInvPointsFileName, noINVPoints, newline='\n',fmt='%s')
+
+
+
+def mergeRealFiles(realFileNamesDire,realFileNames,outputPointsFileName,outputFeaturesFileName):
+
+	i = 0
+	allRealDataVCFPoints = np.empty(shape=[0, 3])
+	allRealDataVCFPointsFeatures = np.empty(shape=[0, 10])
+	for name in realFileNames:
+		i += 1	
+		completePointsFileName = realFileNamesDire+name+'/'+name+'_VCFPoints_INV'
+		aPoints = np.loadtxt(completePointsFileName).reshape(-1,2)
+		aPoints = np.insert(aPoints.astype('str'), 2, values=name, axis=1)
+		allRealDataVCFPoints = np.vstack((allRealDataVCFPoints, aPoints))
+
+		completeFixFeaturesFileName = realFileNamesDire+name+'/'+name+'_VCFPointsFeatures_V3_INV'
+		aFeature = np.loadtxt(completeFixFeaturesFileName).reshape(-1,10)
+		allRealDataVCFPointsFeatures = np.vstack((allRealDataVCFPointsFeatures, aFeature))
+
+	np.savetxt(realFileNamesDire+outputPointsFileName, allRealDataVCFPoints, newline='\n',fmt='%s')
+	np.savetxt(realFileNamesDire+outputFeaturesFileName, allRealDataVCFPointsFeatures, newline='\n',fmt='%s')
+
+	print('merged real data file number:',i,', ','contains:',len(allRealDataVCFPointsFeatures),'numeral features')
+	print('Generating merged real points file:',realFileNamesDire+outputPointsFileName)
+	print('Generating merged real features file:',realFileNamesDire+outputFeaturesFileName)
+
+
+def mergeSimuFiles(simuInvFileNamesDire,simuInvFileNames,outputFile):
+
+	i = 0
+	allSimuData = np.empty(shape=[0, 11])
+	for name in simuInvFileNames:
+		i += 1
+		completeName = simuInvFileNamesDire+name+'_VCFPointsFeatures_INV'
+		a = np.loadtxt(completeName)
+		b = np.ones(len(a)).reshape(-1,1)
+		c = np.hstack((a, b))
+		allSimuData = np.vstack((allSimuData, c))
+
+		completeName = simuInvFileNamesDire+name+'_NoINVPointsFeatures_INV'
+		a = np.loadtxt(completeName)
+		b = np.zeros(len(a)).reshape(-1,1)
+		c = np.hstack((a, b))
+		allSimuData = np.vstack((allSimuData, c))
+
+	np.savetxt(outputFile, allSimuData, newline='\n',fmt='%s')
+	print('Merged simulated inversions/NoInversions file number：',i,' ,record number： ',len(allSimuData))
+
+
+
+def svmFeatureSelect(dic,trainDataFile,testDataFile,testPointsFile,outputFile):
+
+	allInvFEATURESExpectOutput = np.loadtxt(trainDataFile)	# simuDataFeatures_addDEL_lable_V1 simuDataFeatures_lable_V3这是全部特征，期望输出在最后一列
+	trainFeatures = allInvFEATURESExpectOutput[:,:-1]
+	allInvExpectResult = allInvFEATURESExpectOutput[:,-1]	
+	testFeatures = np.loadtxt(dic+testDataFile)
+	testPoints = np.loadtxt(dic+testPointsFile)
+	invPointsInvBFM = np.empty(shape=[0, 3])
+
+	allReadFeature = np.vstack((trainFeatures, testFeatures)) 
+	
+	print('train data set file:',trainDataFile,'test data set file:',testDataFile)
+
+	allFeatures_scaled = preprocessing.scale(allReadFeature)
+	X_scaled = allFeatures_scaled[:len(allInvFEATURESExpectOutput),:]
+	near_scale = allFeatures_scaled[len(allInvFEATURESExpectOutput):,:]
+	X_train,X_test,y_train,y_test = train_test_split(X_scaled,allInvExpectResult,test_size=0.0001,random_state=0)
+	classifier = svm.SVC(kernel="linear",C=0.1)				
+	classifier.fit(X_train,y_train)		
+	predicted = classifier.predict(near_scale)					
+	difExpPredi = 0
+	for i in range(len(predicted)):
+		if(1 == predicted[i]):
+			difExpPredi += 1 # difExpPredi is the number of true inversions judged by InvBFM
+			invPointsInvBFM = np.vstack((invPointsInvBFM, testPoints[i]))
+	
+	np.savetxt(outputFile, invPointsInvBFM, newline='\n',fmt='%s')
+	print("True inversions judged by InvBFM saved at： ",outputFile)
+	
+
+
+if __name__ == '__main__':
+
+	print('')
+	
+	if(len(sys.argv)==1):
+		print('InvBFM version 1.0: ')
+		print('options: ')
+		print('	./InvBFM -rt	Usage for fixing Pindel/Delly/Lumpy/Lumpyexpress results for real bam.')
+		print('	./InvBFM -rp	Usage for getting candidate inversions for a real bam.')
+		print('	./InvBFM -rm	Usage for merging candidate inversions and its features from numeral real files.')
+		print('	./InvBFM -fm	Usage for getting features selected by InvBFM.')
+		print('	./InvBFM -sn	Usage for getting simulated no inversion points.')
+		print('	./InvBFM -sm	Usage for merging inversion/NoInversion features for simulated data.')
+		print('	./InvBFM -ci	Usage for calling true inversions by SVM.')
+
+	if(len(sys.argv)==2):
+		if(sys.argv[1]=='-rt'):
+			print('Usage for fixing Pindel/Delly/Lumpy/Lumpyexpress results for real bam: ')
+			print('')
+			print('./InvBFM -rt <resSampleDirectory> <pindelResultFile> <pindelPointsFile> <dellyResultFile> <dellyPointsFile> <lumpyexpressResultFile> <lumpyexpressPointsFile> <lumpyResultFile> <lumpyPointsFile>')
+		
+		if(sys.argv[1]=='-rp'):
+			print('Usage for getting candidate inversions for a real bam: ')
+			print('')
+			print('./InvBFM -rp <pindelPointsFile> <dellyPointsFile> <lumpyPointsFile> <lumpyexpressPointsFile> <outputFile> <mean_ISPE> <ISSD>')
+		
+		if(sys.argv[1]=='-rm'):
+			print('Usage for merging candidate inversions and its features from numeral real files: ')
+			print('')
+			print('./InvBFM -rm <realDirectory> <realFeatureFiles> <outputPointsFile> <outputFeaturesFile>')
+
+		if(sys.argv[1]=='-fm'):
+			print('Usage for mining features selected by InvBFM: ')
+			print('')
+			print('./InvBFM -fm <minedPointsFile> <outputFile> <bamFile> <"chromNumber"> <mean_ISPE> <ISSD>')
+
+		if(sys.argv[1]=='-sn'):
+			print('Usage for getting no inversion points for simulated bam: ')
+			print('')
+			print('./InvBFM -sn <simulatedInversionPointsFile> <simulatedNoInversionPointsFile>')
+
+		if(sys.argv[1]=='-sm'):
+			print('Usage for merging inversion/NoInversion features for simulated data: ')
+			print('')
+			print('./InvBFM -sm <simulatedDirectory> <simulatedFeatureFiles> <outputFile>')
+		
+		if(sys.argv[1]=='-ci'):
+			print('Usage for calling true inversions by SVM: ')
+			print('')
+			print('./InvBFM -ci <dataDirectory> <trainDataFile> <testDataFile> <testPointsFile> <outputFile>')
+
+
+	if(len(sys.argv)==11 and (sys.argv[1]=='-rt')):
+		print('-rt')
+		getPindelBreakPoints(sys.argv[2], sys.argv[3], sys.argv[4],"INV")
+		getDellyBreakPoints(sys.argv[2],sys.argv[5],sys.argv[6],"INV")
+		getLumpyBreakPoints(sys.argv[2],sys.argv[7],sys.argv[8],"INV")
+		getLumpyBreakPoints(sys.argv[2],sys.argv[9],sys.argv[10],"INV")
+
+	if(len(sys.argv)==9 and (sys.argv[1]=='-rp')):   #这里差merge特征啊，还有加入经过筛选的特征
+		print('Selecting: -rp')
+		fixAllPoints(sys.argv[2], sys.argv[3], sys.argv[4],sys.argv[5], sys.argv[6], sys.argv[7],sys.argv[8])
+
+	if(len(sys.argv)==8 and (sys.argv[1]=='-fm')):
+		print('Selecting: -fm')
+		getFeatures(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
+
+	if(len(sys.argv)==4 and (sys.argv[1]=='-sn')): 
+		print('Selecting: -sn')
+		getNoINVPoints(sys.argv[2], sys.argv[3])
+
+	if(len(sys.argv)==5 and (sys.argv[1]=='-sm')): 
+		print('Selecting: -sm')
+		mergeSimuFiles(sys.argv[2], sys.argv[3], sys.argv[4])
+
+	if(len(sys.argv)==6 and (sys.argv[1]=='-rm')): 
+		print('Selecting: -rm')
+		mergeRealFiles(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
+
+	if(len(sys.argv)==7 and (sys.argv[1]=='-ci')): 
+		print('Selecting: -ci')
+		svmFeatureSelect(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])		
+
+
+	print('')
+
+
+	
+
