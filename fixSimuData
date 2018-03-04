@@ -24,26 +24,4 @@ rm $1$2$6.unsort.bam
 samtools index $1$2$6.bam
 echo "get simulated bam end"
 
-mkdir $1$2dellyResult
-delly_v0.7.7 call -t INV -o $1$2dellyResult/$6_dellyResult_INV.bcf -g $1$3 $1$2$6.bam
-python /home/gao/hdg/gao/wuzhongjia/code/codeInvSum/fixBCF.py $1$2dellyResult/ $6_dellyResult_INV.bcf $6_dellyResult_INV
-echo "get DellyResult end"
-
-mkdir $1$2pindelResult
-echo "$1$2$6.bam $8 $6" > $1$2pindelResult/config_$6
-pindel -f $1$3 -i $1$2pindelResult/config_$6 -o $1$2pindelResult/$6_pindelResult
-echo "get PindelResult end"
-
-mkdir $1$2lumpyResult
-cd $1$2
-speedseq align -R "@RG\tID:id\tSM:sample\tLB:lib" $1$3 $1$2$6_PE1.fq $1$2$6_PE2.fq # produce ： 60kto3milion_INV1011_0.005_PE1.fq.bam、60kto3milion_INV1011_0.005_PE1.fq.bam.bai、60kto3milion_INV1011_0.005_PE1.fq.discordants.bam、60kto3milion_INV1011_0.005_PE1.fq.discordants.bam.bai、60kto3milion_INV1011_0.005_PE1.fq.splitters.bam、60kto3milion_INV1011_0.005_PE1.fq.splitters.bam.bai、
-samtools view $1$2$6_PE1.fq.bam | tail -n+100000 | /mnt/hdg/gao/tools/LUMPY/lumpy-sv/scripts/pairend_distro.py -r ${11} -X 4 -N 10000 -o $1$2lumpyResult/$6_PE1.fq.bam.histo 
-lumpy -mw 4 -tt 0 -pe id:$6,bam_file:$1$2$6_PE1.fq.discordants.bam,histo_file:$1$2lumpyResult/$6_PE1.fq.bam.histo,mean:$8,stdev:$9,read_length:${11},min_non_overlap:${11},discordant_z:5,back_distance:10,weight:1,min_mapping_threshold:20 -sr id:$6,bam_file:$1$2$6_PE1.fq.splitters.bam,back_distance:10,weight:1,min_mapping_threshold:20 > $1$2lumpyResult/$6_lumpyResult
-echo "get LumpyResult end"
-lumpyexpress -B $1$2$6_PE1.fq.bam -S $1$2$6_PE1.fq.splitters.bam -D $1$2$6_PE1.fq.discordants.bam -o $1$2lumpyResult/$6_lumpyexpressResult
-echo "get LumpyexpressResult end"
-
-rm $1$2$6_*
-rm $1$2$6.sam
-
 echo "fixSimuData end"
