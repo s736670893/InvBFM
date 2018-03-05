@@ -37,8 +37,6 @@ For example: `./fixSimuData /home/simulateData3k/ INV3011_0.005/  hs37d5.fa 0.00
 		`./InvBFM -sm`	Usage for merging inversion/NoInversion features for simulated data.<br/>
 		`./InvBFM -ci`	Usage for calling true inversions by SVM.<br/>
 ### 2.2 Usage
-` ./InvBFM -rt`	Usage for fixing Pindel/Delly/Lumpy/Lumpyexpress results for real bam.
-<br/>
 * ./InvBFM -rt &lt; resultDirectory > &lt; pindelResultFile > &lt; pindelPointsFile > &lt; dellyResultFile > &lt; dellyPointsFile > &lt; lumpyexpressResultFile > &lt; lumpyexpressPointsFile > &lt; lumpyResultFile > &lt; lumpyPointsFile >
 <br/><br/>
 For example: `./InvBFM -rt /home/realBamResult/ pindelResult/NA19982_pindelResult_ pindelResult/NA19982_pindelPoints_ dellyResult/NA19982_dellyResult_ dellyResult/NA19982_dellyPoints_ lumpyexpressResult/NA19982_lumpyexpressResult_ lumpyexpressResult/NA19982_lumpyexpressPoints_ lumpyResult/NA19982_lumpyResult_ lumpyResult/NA19982_lumpyPoints_`
