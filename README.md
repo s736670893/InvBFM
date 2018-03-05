@@ -23,8 +23,7 @@ Usage:
 * ./fixSimuData &lt; simulatedTopDirectory > &lt; simulatedSecondaryDirectory > &lt; simulatedReference.fa > &lt; deviation > &lt; resultReference.fa > &lt; output > \"--Inv &lt; inversionNumber >--start: &lt; firstBreakpointLeftPosition >-end:&lt; firstBreakpointRightPosition > --size &lt; inversionLength >\" &lt; ISPE > &lt; ISSD > &lt; coverage > &lt; readLength >
 <br/>
 <br/>
-For example: ./fixSimuData /home/simulateData3k/ INV3011_0.005/  hs37d5.fa 0.005 Seq.test.fa INV3011_0.005 "--Inv 61-start:45000-end:48010 --size 3011" 360 30 25X 128
-<br/><br/>
+For example: ./fixSimuData /home/simulateData3k/ INV3011_0.005/  hs37d5.fa 0.005 Seq.test.fa INV3011_0.005 "--Inv 61-start:45000-end:48010 --size 3011" 360 30 25X 128   
 ## 2 Inversion calls
 <br/>
 Using "./InvBFM" to get usage of InvBFM.
