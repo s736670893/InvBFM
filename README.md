@@ -4,7 +4,7 @@ Both fixRealData and fixSimuData are written in Shell for data preprocessing.
 InvBFM is written in Python which proposed in our paper.All three programs are packaged as executables, 
 downloading from their source code and changed their permissions to executable for using as a tool.
 <br/> <br/>
-For example: chmod 777 InvBFM
+For example: `chmod 777 InvBFM`
 ## 1 Data preprocessing
 ### 1.1 fixRealData
 The purpose of fixRealData is to is to detect inversions using existed tools.
@@ -36,9 +36,7 @@ For example: `./fixSimuData /home/simulateData3k/ INV3011_0.005/  hs37d5.fa 0.00
 		`./InvBFM -sn`	Usage for getting simulated no inversion points.<br/>
 		`./InvBFM -sm`	Usage for merging inversion/NoInversion features for simulated data.<br/>
 		`./InvBFM -ci`	Usage for calling true inversions by SVM.<br/>
-<br/><br/>
 ### 2.2 Usage
-<br/><br/>
 ` ./InvBFM -rt`	Usage for fixing Pindel/Delly/Lumpy/Lumpyexpress results for real bam.
 <br/>
 * ./InvBFM -rt &lt; resultDirectory > &lt; pindelResultFile > &lt; pindelPointsFile > &lt; dellyResultFile > &lt; dellyPointsFile > &lt; lumpyexpressResultFile > &lt; lumpyexpressPointsFile > &lt; lumpyResultFile > &lt; lumpyPointsFile >
