@@ -503,7 +503,7 @@ if __name__ == '__main__':
 		getLumpyBreakPoints(sys.argv[2],sys.argv[7],sys.argv[8],"INV")
 		getLumpyBreakPoints(sys.argv[2],sys.argv[9],sys.argv[10],"INV")
 
-	if(len(sys.argv)==9 and (sys.argv[1]=='-rp')):   #这里差merge特征啊，还有加入经过筛选的特征
+	if(len(sys.argv)==9 and (sys.argv[1]=='-rp')):
 		print('Selecting: -rp')
 		fixAllPoints(sys.argv[2], sys.argv[3], sys.argv[4],sys.argv[5], sys.argv[6], sys.argv[7],sys.argv[8])
 
