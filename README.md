@@ -7,7 +7,7 @@ downloading from their source code and changed their permissions to executable f
 For example: `chmod 777 InvBFM`
 ## 1 Data preprocessing
 ### 1.1 fixRealData
-The purpose of fixRealData is to is to detect inversions based on existed tools.
+The purpose of fixRealData is to is to detect inversions based on existing tools.
 <br/><br/>
 Usage: <br/>
 * ./fixRealData &lt; resultDirectory > &lt; realBamDirectory > &lt; realData.bam > &lt; referenceDirectory > &lt; referenceChrom.fa > &lt; referenceWholeGene.fa >
