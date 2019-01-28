@@ -5,6 +5,7 @@ if [ $# != 6 ]
 then
 	echo "Usage: "
 	echo "./fixRealData.sh <resultDirectory> <realBamDirectory> <realData.bam> <referenceDirectory> <referenceChrom.fa> <referenceWholeGene.fa>"
+	exit
 fi
 sampleName=${3:0:15}
 path=$1${sampleName}/
